@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
 
     if(argc > 1)
     {
+        //Build output path string
         input_path = argv[1];
         int length = strlen(input_path);
         output_path = malloc(sizeof(char) * (length + 9));
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
 
     if(argc > 2)
     {     
+        //Convert 2 command line arguments to float
         char *ptr;
         scale_factor = strtof(argv[2], &ptr);  
 
@@ -46,11 +48,24 @@ int main(int argc, char *argv[])
 
         if(argc == 7)
         {
+            //Convert crop arguments to float            
             crop_x = strtof(argv[3], &ptr);  
             crop_y = strtof(argv[4], &ptr);  
             crop_w = strtof(argv[5], &ptr);  
             crop_h = strtof(argv[6], &ptr); 
 
+            //Clamp values between 0 and 1
+            //Values are "percentages"
+            crop_x = (crop_x < 0.0f ? 0.0:crop_x);
+            crop_x = (crop_x > 1.0f ? 1.0:crop_x);
+            crop_y = (crop_y < 0.0f ? 0.0:crop_y);
+            crop_y = (crop_y > 1.0f ? 1.0:crop_y);
+            crop_w = (crop_w < 0.0f ? 0.0:crop_w);
+            crop_w = (crop_w > 1.0f ? 1.0:crop_w);
+            crop_h = (crop_h < 0.0f ? 0.0:crop_h);
+            crop_h = (crop_h > 1.0f ? 1.0:crop_h);
+
+            //Tells program to run cropping code
             crop = 1;
         }
     }  
@@ -82,38 +97,46 @@ int main(int argc, char *argv[])
                  STBIR_FILTER_BOX, STBIR_FILTER_BOX,
                  STBIR_COLORSPACE_SRGB, NULL);  
                  
-    stbi_image_free(input_image.local_buffer);    
+    stbi_image_free(input_image.local_buffer); 
 
-    int target_width = resized_image.width*crop_w;
-    int target_height = resized_image.height*crop_h;
-    int target_offset_x = resized_image.width*crop_x;
-    int target_offset_y = resized_image.height*crop_y;
-
-    target_offset_x = (target_offset_x < 0 ? 0:target_offset_x);
-    target_offset_x = (target_offset_x >= resized_image.width ? resized_image.width-1:target_offset_x);
-
-    target_offset_y = (target_offset_y < 0 ? 0:target_offset_y);
-    target_offset_y = (target_offset_y >= resized_image.height ? resized_image.height-1:target_offset_y);
-    
-    target_width = (target_offset_x + target_width > resized_image.width ? resized_image.width - target_offset_x:target_width);
-    target_height = (target_offset_y + target_height > resized_image.height ? resized_image.height - target_offset_y:target_height);
-    
-    cropped_image.width = target_width;
-    cropped_image.height = target_height;
-    cropped_image.local_buffer = (unsigned char *) malloc(cropped_image.width * cropped_image.height * resized_image.bytes_per_pixel);  
-
-    for (int y = 0; y < cropped_image.height; y++)
-    {
-        int cropped_image_row = y*cropped_image.width*resized_image.bytes_per_pixel;
-        int resized_image_row = (y + target_offset_y)* (resized_image.width *resized_image.bytes_per_pixel) + (target_offset_x*resized_image.bytes_per_pixel);
-        memcpy(&cropped_image.local_buffer[cropped_image_row],&resized_image.local_buffer[resized_image_row],cropped_image.width*resized_image.bytes_per_pixel*sizeof(unsigned char));
+    if(!crop)
+    {   
+        stbi_write_png(output_path, resized_image.width, resized_image.height, resized_image.bytes_per_pixel, resized_image.local_buffer, 0);   
+        stbi_image_free(resized_image.local_buffer);  
     }
-    
-    stbi_image_free(resized_image.local_buffer);    
+    else
+    {   
+        int target_width = resized_image.width*crop_w;
+        int target_height = resized_image.height*crop_h;
+        int target_offset_x = resized_image.width*crop_x;
+        int target_offset_y = resized_image.height*crop_y;
 
-    stbi_write_png(output_path, cropped_image.width, cropped_image.height, input_image.bytes_per_pixel, cropped_image.local_buffer, 0);   
-    
-    stbi_image_free(cropped_image.local_buffer);
+        target_offset_x = (target_offset_x < 0 ? 0:target_offset_x);
+        target_offset_x = (target_offset_x >= resized_image.width ? resized_image.width-1:target_offset_x);
+
+        target_offset_y = (target_offset_y < 0 ? 0:target_offset_y);
+        target_offset_y = (target_offset_y >= resized_image.height ? resized_image.height-1:target_offset_y);
+        
+        target_width = (target_offset_x + target_width > resized_image.width ? resized_image.width - target_offset_x:target_width);
+        target_height = (target_offset_y + target_height > resized_image.height ? resized_image.height - target_offset_y:target_height);
+        
+        cropped_image.width = target_width;
+        cropped_image.height = target_height;
+        cropped_image.local_buffer = (unsigned char *) malloc(cropped_image.width * cropped_image.height * resized_image.bytes_per_pixel);  
+
+        for (int y = 0; y < cropped_image.height; y++)
+        {
+            int cropped_image_row = y*cropped_image.width*resized_image.bytes_per_pixel;
+            int resized_image_row = (y + target_offset_y)* (resized_image.width *resized_image.bytes_per_pixel) + (target_offset_x*resized_image.bytes_per_pixel);
+            memcpy(&cropped_image.local_buffer[cropped_image_row],&resized_image.local_buffer[resized_image_row],cropped_image.width*resized_image.bytes_per_pixel*sizeof(unsigned char));
+        }
+        
+        stbi_image_free(resized_image.local_buffer);    
+
+        stbi_write_png(output_path, cropped_image.width, cropped_image.height, input_image.bytes_per_pixel, cropped_image.local_buffer, 0);   
+        
+        stbi_image_free(cropped_image.local_buffer);
+    }
 
     free(output_path);
 
