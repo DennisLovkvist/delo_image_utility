@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "libs/stb_image.h"
@@ -13,28 +14,55 @@ struct Image
     unsigned char* local_buffer;
 };
 
-int main(void)
-{          
-    int target_width = 500;
-    int target_height = 500;
+int main(int argc, char *argv[])
+{     
+    float scale_factor = 1.0f;
+    char *input_path;
+    char *output_path;  
+    float crop_x,crop_y = 0.0f;
+    float crop_w,crop_h = 1.0f;
+    int crop = 0;
 
-    int target_offset_x = 800;
-    int target_offset_y = 0;
+    if(argc > 1)
+    {
+        input_path = argv[1];
+        int length = strlen(input_path);
+        output_path = malloc(sizeof(char) * (length + 9));
+        memcpy(output_path,"resized_", sizeof(char) * 8);        
+        memcpy(&output_path[8],input_path, length);  
+        output_path[length + 8] = '\0';
+    }
 
+    if(argc > 2)
+    {     
+        char *ptr;
+        scale_factor = strtof(argv[2], &ptr);  
 
-    
+        if(scale_factor == 0)
+        {
+            printf("scale factor cannot be 0 \n");
+            return 0;
+        }   
+
+        if(argc == 7)
+        {
+            crop_x = strtof(argv[3], &ptr);  
+            crop_y = strtof(argv[4], &ptr);  
+            crop_w = strtof(argv[5], &ptr);  
+            crop_h = strtof(argv[6], &ptr); 
+
+            crop = 1;
+        }
+    }  
 
     Image input_image;
     Image resized_image;
-    Image cropped_image;
-
-    char input_path[] = "test.png";
-    char output_path[] = "output.png";    
+    Image cropped_image;  
     
     input_image.local_buffer = stbi_load(input_path, &input_image.width, &input_image.height, &input_image.bytes_per_pixel, 0);
 
-    resized_image.width = input_image.width / 4;
-    resized_image.height = input_image.height / 4;
+    resized_image.width = input_image.width * scale_factor;
+    resized_image.height = input_image.height * scale_factor;
     resized_image.bytes_per_pixel = input_image.bytes_per_pixel;
     resized_image.local_buffer = (unsigned char *) malloc(resized_image.width * resized_image.height * input_image.bytes_per_pixel);    
     
@@ -56,6 +84,10 @@ int main(void)
                  
     stbi_image_free(input_image.local_buffer);    
 
+    int target_width = resized_image.width*crop_w;
+    int target_height = resized_image.height*crop_h;
+    int target_offset_x = resized_image.width*crop_x;
+    int target_offset_y = resized_image.height*crop_y;
 
     target_offset_x = (target_offset_x < 0 ? 0:target_offset_x);
     target_offset_x = (target_offset_x >= resized_image.width ? resized_image.width-1:target_offset_x);
@@ -82,6 +114,8 @@ int main(void)
     stbi_write_png(output_path, cropped_image.width, cropped_image.height, input_image.bytes_per_pixel, cropped_image.local_buffer, 0);   
     
     stbi_image_free(cropped_image.local_buffer);
+
+    free(output_path);
 
     return 0;
 }
