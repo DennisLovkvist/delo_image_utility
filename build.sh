@@ -1,1 +1,1 @@
-gcc  main.c -Ilibs -o main -lm -ldl
+gcc  main.c -Ilibs -o image_resize -lm -ldl -O3
