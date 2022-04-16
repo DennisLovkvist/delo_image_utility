@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <sys/stat.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "libs/stb_image.h"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -25,8 +25,18 @@ int main(int argc, char *argv[])
 
     if(argc > 1)
     {
-        //Build output path string
         input_path = argv[1];
+        
+        struct stat st;
+        int result = stat(input_path, &st);       
+
+        if(result == -1)
+        {
+            printf("[error]::cannot find file \n");
+            return 0;
+        }
+        
+        //Build output path string
         int length = strlen(input_path);
         output_path = malloc(sizeof(char) * (length + 9));
         memcpy(output_path,"resized_", sizeof(char) * 8);        
@@ -42,7 +52,7 @@ int main(int argc, char *argv[])
 
         if(scale_factor == 0)
         {
-            printf("scale factor cannot be 0 \n");
+            printf("[error]::scale factor cannot be 0 \n");
             return 0;
         }   
 
@@ -105,12 +115,13 @@ int main(int argc, char *argv[])
         stbi_image_free(resized_image.local_buffer);  
     }
     else
-    {   
+    {           
         int target_width = resized_image.width*crop_w;
         int target_height = resized_image.height*crop_h;
         int target_offset_x = resized_image.width*crop_x;
         int target_offset_y = resized_image.height*crop_y;
 
+        //Prevents cropping outside the image
         target_offset_x = (target_offset_x < 0 ? 0:target_offset_x);
         target_offset_x = (target_offset_x >= resized_image.width ? resized_image.width-1:target_offset_x);
 
@@ -119,6 +130,7 @@ int main(int argc, char *argv[])
         
         target_width = (target_offset_x + target_width > resized_image.width ? resized_image.width - target_offset_x:target_width);
         target_height = (target_offset_y + target_height > resized_image.height ? resized_image.height - target_offset_y:target_height);
+
         
         cropped_image.width = target_width;
         cropped_image.height = target_height;
