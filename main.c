@@ -104,8 +104,46 @@ void resize(Image *image_source,Image *image_resized,float scale_factor)
                  STBIR_COLORSPACE_SRGB, NULL);                 
     
 }
+//deloimg -op crop -i $IMAGE -u pct -x 0.25 -y 0 -w $FACTOR -h 1
+
+#define ARG_OP 0
+#define ARG_I 1
+#define ARG_U 2
+#define ARG_X 3
+#define ARG_Y 4
+#define ARG_W 5
+#define ARG_H 6
+#define ARG_S 7
+
+const char* FLAGS[8] = { "-op", "-i", "-u", "-x", "-y","-w","-h", "-s"};
+char* args_values[8]; 
+int args_defined[8] = {0,0,0,0,0,0,0,0}; 
+
+void parse_arguments(int argc,char **argv[])
+{
+    for (size_t i = 1; i < argc; i+=2)
+    {
+        char *arg = (*argv)[i];
+
+        for (size_t j = 0; j < 8; j++)
+        {
+            if(strcmp(arg,FLAGS[j]) == 0)
+            {
+                if(i+1 < argc)
+                {
+                    args_values[j] = (*argv)[i+1];
+                    args_defined[j] = 1;
+                }
+            }
+
+        }
+    }
+    
+}
 int main(int argc, char *argv[])
 {     
+    parse_arguments(argc,&argv);
+
     int operation = OPERATION_UNDEFINED;
     int units = UNITS_UNDEFINED;
     char *input_path;
@@ -117,11 +155,11 @@ int main(int argc, char *argv[])
     }
     else
     {             
-        if(strcmp(argv[1],"-crop") == 0)
+        if(strcmp(args_values[ARG_OP],"crop") == 0)
         {   
             operation = OPERATION_CROP;               
         }
-        else if(strcmp(argv[1],"-resize") == 0)
+        else if(strcmp(args_values[ARG_OP],"resize") == 0)
         {
             operation = OPERATION_RESIZE;    
         }
@@ -131,7 +169,7 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        input_path = argv[2];        
+        input_path = args_values[ARG_I];        
         struct stat st;
         int result = stat(input_path, &st);       
 
@@ -145,18 +183,20 @@ int main(int argc, char *argv[])
         
         if(operation == OPERATION_CROP)
         {
-            if(argc < 8)
+            int argument_check = args_defined[ARG_I] * args_defined[ARG_U] * args_defined[ARG_X] * args_defined[ARG_Y] * args_defined[ARG_W] * args_defined[ARG_H];
+            
+            if(argument_check == 0)
             {
                 printf("[error]::not enough arguments \n");
                 return 0;
             }
             else
             {
-                if(strcmp(argv[3],"-px") == 0)
+                if(strcmp(args_values[ARG_U],"px") == 0)
                 {
                     units = UNITS_PIXELS;            
                 }
-                else if(strcmp(argv[3],"-pct") == 0)
+                else if(strcmp(args_values[ARG_U],"pct") == 0)
                 {
                     units = UNITS_PERCENTAGES;
                 } 
@@ -182,10 +222,10 @@ int main(int argc, char *argv[])
                 if(units == UNITS_PERCENTAGES)
                 {
                     char *ptr;
-                    float crop_x = strtof(argv[4], &ptr);  
-                    float crop_y = strtof(argv[5], &ptr);  
-                    float crop_w = strtof(argv[6], &ptr);  
-                    float crop_h = strtof(argv[7], &ptr); 
+                    float crop_x = strtof(args_values[ARG_X], &ptr);  
+                    float crop_y = strtof(args_values[ARG_Y], &ptr);  
+                    float crop_w = strtof(args_values[ARG_W], &ptr);  
+                    float crop_h = strtof(args_values[ARG_H], &ptr); 
 
                     //Clamp values
                     crop_x = (crop_x < 0.0f ? 0.0:crop_x);
@@ -203,10 +243,10 @@ int main(int argc, char *argv[])
                 else if(units == UNITS_PIXELS)
                 {
                     char *ptr;
-                    int crop_x = strtol(argv[4], &ptr,10);  
-                    int crop_y = strtol(argv[5], &ptr,10);  
-                    int crop_w = strtol(argv[6], &ptr,10);  
-                    int crop_h = strtol(argv[7], &ptr,10); 
+                    int crop_x = strtol(args_values[ARG_X], &ptr,10);  
+                    int crop_y = strtol(args_values[ARG_Y], &ptr,10);  
+                    int crop_w = strtol(args_values[ARG_W], &ptr,10);  
+                    int crop_h = strtol(args_values[ARG_H], &ptr,10); 
 
                     //Clamp values
                     crop_x = (crop_x < 0 ? 0:crop_x);
@@ -235,7 +275,8 @@ int main(int argc, char *argv[])
         }  
         else
         {
-            if(argc < 4)
+            int argument_check = args_defined[ARG_I] * args_defined[ARG_S];
+            if(argument_check == 0)
             {
                 printf("[error]::not enough arguments for resizing \n");
                 return 0;
@@ -243,7 +284,7 @@ int main(int argc, char *argv[])
             else
             {
                 char *ptr;
-                float scale_factor = strtof(argv[3], &ptr); 
+                float scale_factor = strtof(args_values[ARG_S], &ptr); 
 
                 char *output_path;  
                 int length = strlen(input_path);
