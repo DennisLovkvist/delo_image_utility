@@ -15,12 +15,75 @@
 #define UNITS_PIXELS 1
 #define UNITS_PERCENTAGES 2
 
+#define ARG_OP 0
+#define ARG_I 1
+#define ARG_U 2
+#define ARG_X 3
+#define ARG_Y 4
+#define ARG_W 5
+#define ARG_H 6
+#define ARG_S 7
+
+#define FLAG_COUNT 8
+
 typedef struct Image Image;
 struct Image
 {
     int width,height,bytes_per_pixel;
     unsigned char* local_buffer;
 };
+
+const char* FLAGS[FLAG_COUNT] = { "-op", "-i", "-u", "-x", "-y","-w","-h", "-s"};
+char* args_values[FLAG_COUNT]; 
+int args_defined[FLAG_COUNT] = {0,0,0,0,0,0,0,0}; 
+
+void parse_arguments(int argc,char **argv[])
+{
+    for (size_t i = 1; i < argc; i+=2)
+    {
+        char *arg = (*argv)[i];
+
+        for (size_t j = 0; j < FLAG_COUNT; j++)
+        {
+            if(strcmp(arg,FLAGS[j]) == 0)
+            {
+                if(i+1 < argc)
+                {
+                    args_values[j] = (*argv)[i+1];
+                    args_defined[j] = 1;
+                }
+            }
+
+        }
+    }
+    
+}
+void print_help()
+{
+    printf("%s\n", "+-------------------------------------------------------------------------------------------+");
+    printf("%s\n", "| [Resizing]                                                                                |");
+    printf("%s\n", "|           Example: delo_img -op resize -i test_image.png -s 0.5                           |");
+    printf("%s\n", "|           Result: Scales the image by half and saves a copy.                              |");     
+    printf("%s\n", "|                                                                                           |");
+    printf("%s\n", "| [Cropping]                                                                                |");
+    printf("%s\n", "|           Example: delo_img -op crop -i test_image.png -u px -x 100 -y 100 -w 300 -h 300  |");
+    printf("%s\n", "|           Result: Crops out an image using pixels as units and saves a copy.              |"); 
+    printf("%s\n", "|                                                                                           |");
+    printf("%s\n", "|           Example: delo_img -op crop -i test_image.png -u pct -x 0.25 -y 0 -w 0.5 -h 1    |");
+    printf("%s\n", "|           Result: Crops out an image using percentagess as units and saves a copy.        |");     
+    printf("%s\n", "|                                                                                           |");
+    printf("%s\n", "| [Arguments]                                                                               |");
+    printf("%s\n", "|           -op     Defines the operation e.g. resize or crop.                              |");
+    printf("%s\n", "|           -i      Path to the input image.                                                |");
+    printf("%s\n", "|           -u      Units, px = pixels, pct = percentages                                   |");
+    printf("%s\n", "|           -s      Scale factor e.g. 0.5 scales image down by half                         |");
+    printf("%s\n", "|           -x      X position of the cropping rectangle                                    |");
+    printf("%s\n", "|           -y      Y position of the cropping rectangle                                    |");
+    printf("%s\n", "|           -w      Weight of the cropping rectangl                                         |");
+    printf("%s\n", "|           -h      Height of the cropping rectangle                                        |");
+    printf("%s\n", "+-------------------------------------------------------------------------------------------+");
+}
+
 void crop_by_pixels(Image *image_source,Image *image_cropped,int crop_x,int crop_y,int crop_w,int crop_h)
 {
     int target_width = crop_w;
@@ -104,45 +167,24 @@ void resize(Image *image_source,Image *image_resized,float scale_factor)
                  STBIR_COLORSPACE_SRGB, NULL);                 
     
 }
-//deloimg -op crop -i $IMAGE -u pct -x 0.25 -y 0 -w $FACTOR -h 1
 
-#define ARG_OP 0
-#define ARG_I 1
-#define ARG_U 2
-#define ARG_X 3
-#define ARG_Y 4
-#define ARG_W 5
-#define ARG_H 6
-#define ARG_S 7
-
-const char* FLAGS[8] = { "-op", "-i", "-u", "-x", "-y","-w","-h", "-s"};
-char* args_values[8]; 
-int args_defined[8] = {0,0,0,0,0,0,0,0}; 
-
-void parse_arguments(int argc,char **argv[])
-{
-    for (size_t i = 1; i < argc; i+=2)
+int main(int argc, char *argv[])
+{    
+    if(argc >= 2)
     {
-        char *arg = (*argv)[i];
-
-        for (size_t j = 0; j < 8; j++)
+        if(strcmp(argv[1],"-version") == 0)
         {
-            if(strcmp(arg,FLAGS[j]) == 0)
-            {
-                if(i+1 < argc)
-                {
-                    args_values[j] = (*argv)[i+1];
-                    args_defined[j] = 1;
-                }
-            }
-
+            printf("%s\n", "delo_img 1.0");
+            return 0;
+        }
+        else if(strcmp(argv[1],"-help") == 0)
+        {
+            print_help();
+            return 0;
         }
     }
-    
-}
-int main(int argc, char *argv[])
-{     
-    parse_arguments(argc,&argv);
+
+    parse_arguments(argc,&argv);    
 
     int operation = OPERATION_UNDEFINED;
     int units = UNITS_UNDEFINED;

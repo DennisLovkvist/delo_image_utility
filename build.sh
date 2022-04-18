@@ -1,1 +1,1 @@
-gcc  main.c -Ilibs -o deloimg -lm -ldl
+gcc  main.c -Ilibs -o delo_img -lm -ldl -O3

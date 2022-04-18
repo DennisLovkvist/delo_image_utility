@@ -1,0 +1,1 @@
+cp delo_img /usr/bin/
