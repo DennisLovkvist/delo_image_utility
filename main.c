@@ -23,8 +23,9 @@
 #define ARG_W 5
 #define ARG_H 6
 #define ARG_S 7
+#define ARG_O 8
 
-#define FLAG_COUNT 8
+#define FLAG_COUNT 9
 
 typedef struct Image Image;
 struct Image
@@ -33,9 +34,9 @@ struct Image
     unsigned char* local_buffer;
 };
 
-const char* FLAGS[FLAG_COUNT] = { "-op", "-i", "-u", "-x", "-y","-w","-h", "-s"};
+const char* FLAGS[FLAG_COUNT] = { "-op", "-i", "-u", "-x", "-y","-w","-h", "-s","-o"};
 char* args_values[FLAG_COUNT]; 
-int args_defined[FLAG_COUNT] = {0,0,0,0,0,0,0,0}; 
+int args_defined[FLAG_COUNT] = {0,0,0,0,0,0,0,0,0}; 
 
 void parse_arguments(int argc,char **argv[])
 {
@@ -253,12 +254,25 @@ int main(int argc, char *argv[])
                 image_source.local_buffer = stbi_load(input_path, &image_source.width, &image_source.height, &image_source.bytes_per_pixel, 0);
 
                 //Build output path string
-                char *output_path;  
-                int length = strlen(input_path);
-                output_path = malloc(sizeof(char) * (length + 9));
-                memcpy(output_path,"cropped_", sizeof(char) * 8);        
-                memcpy(&output_path[8],input_path, length);  
-                output_path[length + 8] = '\0';
+                
+                char *output_path; 
+                if(args_defined[ARG_O])
+                {
+                    int length = strlen(args_values[ARG_O]);
+                    output_path = malloc(sizeof(char) * length+1);
+                    memcpy(output_path,args_values[ARG_O], sizeof(char) * length);       
+                    output_path[length] = '\0';
+                }
+                else
+                {
+                    int length = strlen(input_path);
+                    output_path = malloc(sizeof(char) * (length + 9));
+                    memcpy(output_path,"cropped_", sizeof(char) * 8);        
+                    memcpy(&output_path[8],input_path, sizeof(char) * length);  
+                    output_path[length + 8] = '\0';
+                }
+                 
+                
 
                 Image image_cropped; 
                 if(units == UNITS_PERCENTAGES)
@@ -329,11 +343,22 @@ int main(int argc, char *argv[])
                 float scale_factor = strtof(args_values[ARG_S], &ptr); 
 
                 char *output_path;  
-                int length = strlen(input_path);
-                output_path = malloc(sizeof(char) * (length + 9));
-                memcpy(output_path,"resized_", sizeof(char) * 8);        
-                memcpy(&output_path[8],input_path, length);  
-                output_path[length + 8] = '\0';
+
+                if(args_defined[ARG_O])
+                {
+                    int length = strlen(args_values[ARG_O]);
+                    output_path = malloc(sizeof(char) * length+1);
+                    memcpy(output_path,args_values[ARG_O], sizeof(char) * length);       
+                    output_path[length] = '\0';
+                }
+                else
+                {
+                    int length = strlen(input_path);
+                    output_path = malloc(sizeof(char) * (length + 9));
+                    memcpy(output_path,"resized_", sizeof(char) * 8);        
+                    memcpy(&output_path[8],input_path, length);  
+                    output_path[length + 8] = '\0';
+                }
 
                 printf("%s", "[info]::loading source image "); 
                 printf("%s\n", input_path);   
