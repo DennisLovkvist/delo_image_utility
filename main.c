@@ -82,6 +82,7 @@ void print_help()
     printf("%s\n", "|           -y      Y position of the cropping rectangle                                    |");
     printf("%s\n", "|           -w      Weight of the cropping rectangl                                         |");
     printf("%s\n", "|           -h      Height of the cropping rectangle                                        |");
+    printf("%s\n", "|           -o      Name of the output file                                                 |");
     printf("%s\n", "+-------------------------------------------------------------------------------------------+");
 }
 
