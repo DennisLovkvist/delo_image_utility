@@ -10,6 +10,7 @@
 #define OPERATION_UNDEFINED 0
 #define OPERATION_CROP 1
 #define OPERATION_RESIZE 2
+#define OPERATION_CONVERT_TO_PNG 3
 
 #define UNITS_UNDEFINED 0
 #define UNITS_PIXELS 1
@@ -207,6 +208,10 @@ int main(int argc, char *argv[])
         {
             operation = OPERATION_RESIZE;    
         }
+        else if(strcmp(args_values[ARG_OP],"convert_to_png") == 0)
+        {
+            operation = OPERATION_CONVERT_TO_PNG;    
+        }
         else
         {
             printf("[error]::undefined operation \n");
@@ -330,7 +335,7 @@ int main(int argc, char *argv[])
                 free(output_path); 
             }
         }  
-        else
+        else if(operation == OPERATION_RESIZE)
         {
             int argument_check = args_defined[ARG_I] * args_defined[ARG_S];
             if(argument_check == 0)
@@ -378,7 +383,54 @@ int main(int argc, char *argv[])
                 
                 free(output_path); 
             }
-        }          
+        }  
+        else if(operation == OPERATION_CONVERT_TO_PNG)
+        {
+            int argument_check = args_defined[ARG_I];
+            if(argument_check == 0)
+            {
+                printf("[error]::not enough arguments for resizing \n");
+                return 0;
+            }
+            else
+            {
+                printf("%s", "[info]::loading source image "); 
+                printf("%s\n", input_path);   
+                image_source.local_buffer = stbi_load(input_path, &image_source.width, &image_source.height, &image_source.bytes_per_pixel, 0);
+
+                 //Build output path string                
+                char *output_path; 
+                if(args_defined[ARG_O])
+                {
+                    int length = strlen(args_values[ARG_O]);
+                    output_path = malloc(sizeof(char) * length+1);
+                    memcpy(output_path,args_values[ARG_O], sizeof(char) * length);    
+                    output_path[length-3] = 'p';
+                    output_path[length-2] = 'n';
+                    output_path[length-1] = 'g';
+                    output_path[length] = '\0';
+                }
+                else
+                {
+                    int length = strlen(input_path);
+                    output_path = malloc(sizeof(char) * (length + 11));
+                    memcpy(output_path,"converted_", sizeof(char) * 10);        
+                    memcpy(&output_path[10],input_path, sizeof(char) * length);     
+                    output_path[length + 7] = 'p';
+                    output_path[length + 8] = 'n';
+                    output_path[length + 9] = 'g';
+                    output_path[length + 10] = '\0';
+                }
+                
+
+
+                stbi_write_png(output_path, image_source.width, image_source.height, image_source.bytes_per_pixel, image_source.local_buffer, 0);   
+                
+                stbi_image_free(image_source.local_buffer); 
+                
+                free(output_path); 
+            }
+        }        
     }
     return 0;
 }
